@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h3><i class="fas fa-user-shield"></i> Admin Panel</h3>
+            </div>
+            <ul class="sidebar-nav">
+                <li>
+                    <a href="/admin/dashboard" class="active">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/users">
+                        <i class="fas fa-users"></i> Quản lý User
+                    </a>
+                </li>
+                <li>
+                    <a href="/logout">
+                        <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <h1 class="header-title">Dashboard</h1>
+            </header>
+
+            <!-- Content -->
+            <div class="content">
+                <!-- Stats Cards -->
+                <div class="stats-cards">
+                    <div class="stat-card users">
+                        <div class="stat-number" th:text="${totalUsers}">0</div>
+                        <div class="stat-label">Tổng số User</div>
+                    </div>
+                    <div class="stat-card active">
+                        <div class="stat-number" th:text="${totalActiveUsers}">0</div>
+                        <div class="stat-label">User đang hoạt động</div>
+                    </div>
+                    <div class="stat-card inactive">
+                        <div class="stat-number" th:text="${totalInactiveUsers}">0</div>
+                        <div class="stat-label">User bị khóa</div>
+                    </div>
+                    <div class="stat-card admins">
+                        <div class="stat-number" th:text="${totalAdmins}">0</div>
+                        <div class="stat-label">Admin</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" th:text="${totalEmployees}">0</div>
+                        <div class="stat-label">Nhân viên</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" th:text="${totalCustomers}">0</div>
+                        <div class="stat-label">Khách hàng</div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions" style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px; color: #2c3e50;">Thao tác nhanh</h3>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <a href="/admin/users" class="btn btn-primary">
+                            <i class="fas fa-users"></i> Quản lý tất cả User
+                        </a>
+                        <button onclick="window.location.href='/admin/users'" class="btn btn-success">
+                            <i class="fas fa-user-plus"></i> Thêm User mới
+                        </button>
+                        <button onclick="filterActiveUsers()" class="btn btn-info">
+                            <i class="fas fa-user-check"></i> Xem User hoạt động
+                        </button>
+                        <button onclick="filterInactiveUsers()" class="btn btn-warning">
+                            <i class="fas fa-user-lock"></i> Xem User bị khóa
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent Users Table -->
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3 class="table-title">User mới nhất</h3>
+                        <a href="/admin/users" class="btn btn-primary">
+                            <i class="fas fa-eye"></i> Xem tất cả
+                        </a>
+                    </div>
+                    <div style="padding: 20px;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Họ tên</th>
+                                    <th>Email</th>
+                                    <th>Quyền</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="user : ${recentUsers}">
+                                    <td th:text="${user.tenDangNhap}">username</td>
+                                    <td th:text="${user.hoTen}">Họ tên</td>
+                                    <td th:text="${user.email}">email@example.com</td>
+                                    <td>
+                                        <span class="badge" 
+                                              th:classappend="${user.quyen == 'ADMIN'} ? 'badge-danger' : 
+                                                             (${user.quyen == 'NHANVIEN'} ? 'badge-warning' : 'badge-primary')"
+                                              th:text="${user.quyen}">ROLE</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge" 
+                                              th:classappend="${user.trangThai == 'HOATDONG'} ? 'badge-success' : 'badge-danger'"
+                                              th:text="${user.trangThai == 'HOATDONG'} ? 'Hoạt động' : 'Khóa'">Trạng thái</span>
+                                    </td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(recentUsers)}">
+                                    <td colspan="5" style="text-align: center; color: #7f8c8d;">Không có dữ liệu</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple JavaScript for interactive elements
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add active class to current navigation item
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.sidebar-nav a');
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // Quick filter functions
+        function filterActiveUsers() {
+            window.location.href = '/admin/users?status=HOATDONG';
+        }
+
+        function filterInactiveUsers() {
+            window.location.href = '/admin/users?status=KHOA';
+        }
+    </script>
+</body>
+</html>

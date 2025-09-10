@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý User - Admin</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h3><i class="fas fa-user-shield"></i> Admin Panel</h3>
+            </div>
+            <ul class="sidebar-nav">
+                <li>
+                    <a href="/admin/dashboard">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/users" class="active">
+                        <i class="fas fa-users"></i> Quản lý User
+                    </a>
+                </li>
+                <li>
+                    <a href="/logout">
+                        <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <h1 class="header-title">Quản lý User</h1>
+            </header>
+
+            <!-- Content -->
+            <div class="content">
+                <!-- Actions and Search -->
+                <div class="table-actions">
+                    <button type="button" class="btn btn-success" onclick="openAddUserModal()">
+                        <i class="fas fa-plus"></i> Thêm User
+                    </button>
+                    
+                    <form method="get" style="display: flex; gap: 10px; margin-left: auto;">
+                        <input type="text" name="search" class="search-box" 
+                               placeholder="Tìm kiếm theo username, email, họ tên..." 
+                               th:value="${param.search}">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Tìm kiếm
+                        </button>
+                        <a href="/admin/users" class="btn btn-warning">
+                            <i class="fas fa-refresh"></i> Reset
+                        </a>
+                    </form>
+                </div>
+
+                <!-- Users Table -->
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3 class="table-title">Danh sách User</h3>
+                        <span>Tổng số: <strong th:text="${users.totalElements}">0</strong> user</span>
+                    </div>
+                    <div style="padding: 20px;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <a th:href="@{/admin/users(sort='tenDangNhap', page=${users.number}, search=${param.search})}">
+                                            Username <i class="fas fa-sort"></i>
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a th:href="@{/admin/users(sort='hoTen', page=${users.number}, search=${param.search})}">
+                                            Họ tên <i class="fas fa-sort"></i>
+                                        </a>
+                                    </th>
+                                    <th>Email</th>
+                                    <th>SĐT</th>
+                                    <th>Quyền</th>
+                                    <th>Trạng thái</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="user : ${users.content}">
+                                    <td th:text="${user.tenDangNhap}">username</td>
+                                    <td th:text="${user.hoTen}">Họ tên</td>
+                                    <td th:text="${user.email}">email@example.com</td>
+                                    <td th:text="${user.soDienThoai}">0123456789</td>
+                                    <td>
+                                        <span class="badge" 
+                                              th:classappend="${user.quyen == 'ADMIN'} ? 'badge-danger' : 
+                                                             (${user.quyen == 'NHANVIEN'} ? 'badge-warning' : 'badge-primary')"
+                                              th:text="${user.quyen}">ROLE</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge" 
+                                              th:classappend="${user.trangThai == 'HOATDONG'} ? 'badge-success' : 'badge-danger'"
+                                              th:text="${user.trangThai == 'HOATDONG'} ? 'Hoạt động' : 'Khóa'">Trạng thái</span>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-primary btn-sm" 
+                                                th:data-user-id="${user.id}" onclick="editUser(this.dataset.userId)">
+                                            <i class="fas fa-edit"></i> Sửa
+                                        </button>
+                                        <button type="button" class="btn btn-warning btn-sm" 
+                                                th:data-user-id="${user.id}" th:data-status="${user.trangThai}" onclick="toggleUserStatus(this.dataset.userId, this.dataset.status)">
+                                            <i th:class="${user.trangThai == 'HOATDONG'} ? 'fas fa-lock' : 'fas fa-unlock'"></i>
+                                            <span th:text="${user.trangThai == 'HOATDONG'} ? 'Khóa' : 'Mở khóa'">Toggle</span>
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-sm" 
+                                                th:data-user-id="${user.id}" th:data-username="${user.tenDangNhap}" onclick="deleteUser(this.dataset.userId, this.dataset.username)">
+                                            <i class="fas fa-trash"></i> Xóa
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(users.content)}">
+                                    <td colspan="7" style="text-align: center; color: #7f8c8d;">Không có dữ liệu</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Pagination -->
+                        <div class="pagination" th:if="${users.totalPages > 1}">
+                            <a th:if="${users.hasPrevious()}" 
+                               th:href="@{/admin/users(page=${users.number - 1}, search=${param.search})}">&laquo; Trước</a>
+                            
+                            <th:block th:each="i : ${#numbers.sequence(0, users.totalPages - 1)}">
+                                <a th:href="@{/admin/users(page=${i}, search=${param.search})}"
+                                   th:text="${i + 1}"
+                                   th:classappend="${i == users.number} ? 'active' : ''">1</a>
+                            </th:block>
+                            
+                            <a th:if="${users.hasNext()}" 
+                               th:href="@{/admin/users(page=${users.number + 1}, search=${param.search})}">Sau &raquo;</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit User Modal -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Thêm User mới</h3>
+                <span class="close" onclick="closeUserModal()">&times;</span>
+            </div>
+            <form id="userForm" action="/api/admin/users" method="post">
+                <input type="hidden" id="userId" name="id">
+                <input type="hidden" id="formMethod" name="_method" value="POST">
+                
+                <div class="form-group">
+                    <label class="form-label">Username *</label>
+                    <input type="text" id="tenDangNhap" name="tenDangNhap" class="form-control" required>
+                </div>
+                
+                <div class="form-group" id="passwordGroup">
+                    <label class="form-label">Mật khẩu <span id="passwordNote">*</span></label>
+                    <input type="password" id="matKhau" name="matKhau" class="form-control">
+                    <input type="hidden" id="isEditMode" value="false">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Họ tên *</label>
+                    <input type="text" id="hoTen" name="hoTen" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Email *</label>
+                    <input type="email" id="email" name="email" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Số điện thoại</label>
+                    <input type="text" id="soDienThoai" name="soDienThoai" class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Địa chỉ</label>
+                    <input type="text" id="diaChi" name="diaChi" class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Quyền *</label>
+                    <select id="quyen" name="quyen" class="form-control" required>
+                        <option value="KHACHHANG">Khách hàng</option>
+                        <option value="NHANVIEN">Nhân viên</option>
+                        <option value="ADMIN">Admin</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Trạng thái *</label>
+                    <select id="trangThai" name="trangThai" class="form-control" required>
+                        <option value="HOATDONG">Hoạt động</option>
+                        <option value="KHOA">Khóa</option>
+                    </select>
+                </div>
+                
+                <div style="text-align: right; margin-top: 20px;">
+                    <button type="button" class="btn btn-warning" onclick="closeUserModal()">Hủy</button>
+                    <button type="submit" class="btn btn-success">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Modal functions
+        function openAddUserModal() {
+            document.getElementById('modalTitle').textContent = 'Thêm User mới';
+            document.getElementById('userForm').action = '/api/admin/users';
+            document.getElementById('formMethod').value = 'POST';
+            document.getElementById('userId').value = '';
+            document.getElementById('passwordGroup').style.display = 'block';
+            document.getElementById('passwordNote').textContent = '*';
+            document.getElementById('matKhau').required = true;
+            document.getElementById('matKhau').placeholder = '';
+            document.getElementById('isEditMode').value = 'false';
+            document.getElementById('userForm').reset();
+            document.getElementById('userModal').style.display = 'block';
+        }
+
+        function editUser(userId) {
+            // Fetch user data and populate form
+            fetch(`/api/admin/users/${userId}`)
+                .then(response => response.json())
+                .then(user => {
+                    document.getElementById('modalTitle').textContent = 'Sửa User';
+                    document.getElementById('userForm').action = `/api/admin/users/${userId}`;
+                    document.getElementById('formMethod').value = 'PUT';
+                    document.getElementById('userId').value = user.id;
+                    document.getElementById('tenDangNhap').value = user.tenDangNhap;
+                    document.getElementById('hoTen').value = user.hoTen;
+                    document.getElementById('email').value = user.email;
+                    document.getElementById('soDienThoai').value = user.soDienThoai || '';
+                    document.getElementById('diaChi').value = user.diaChi || '';
+                    document.getElementById('quyen').value = user.quyen;
+                    document.getElementById('trangThai').value = user.trangThai;
+                    document.getElementById('passwordGroup').style.display = 'block';
+                    document.getElementById('passwordNote').textContent = '(hiển thị mật khẩu hiện tại - có thể sửa trực tiếp)';
+                    document.getElementById('matKhau').required = false;
+                    // Hiển thị mật khẩu hiện tại (đã mã hóa)
+                    document.getElementById('matKhau').value = user.matKhau;
+                    document.getElementById('matKhau').placeholder = '';
+                    document.getElementById('isEditMode').value = 'true';
+                    document.getElementById('userModal').style.display = 'block';
+                })
+                .catch(error => {
+                    alert('Có lỗi xảy ra khi tải thông tin user!');
+                    console.error('Error:', error);
+                });
+        }
+
+        function closeUserModal() {
+            document.getElementById('userModal').style.display = 'none';
+        }
+
+        function toggleUserStatus(userId, currentStatus) {
+            const newStatus = currentStatus === 'HOATDONG' ? 'KHOA' : 'HOATDONG';
+            const action = newStatus === 'HOATDONG' ? 'mở khóa' : 'khóa';
+            
+            if (confirm(`Bạn có chắc chắn muốn ${action} user này?`)) {
+                fetch(`/api/admin/users/${userId}/status?trangThai=${newStatus}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Có lỗi xảy ra!');
+                    }
+                })
+                .catch(error => {
+                    alert('Có lỗi xảy ra!');
+                    console.error('Error:', error);
+                });
+            }
+        }
+
+        function deleteUser(userId, username) {
+            if (confirm(`Bạn có chắc chắn muốn xóa user "${username}"?`)) {
+                fetch(`/api/admin/users/${userId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Có lỗi xảy ra khi xóa user!');
+                    }
+                })
+                .catch(error => {
+                    alert('Có lỗi xảy ra khi xóa user!');
+                    console.error('Error:', error);
+                });
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('userModal');
+            if (event.target === modal) {
+                closeUserModal();
+            }
+        }
+
+        
+
+        // Handle form submission
+        document.addEventListener('DOMContentLoaded', function() {
+            const userForm = document.getElementById('userForm');
+            
+            userForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                const method = formData.get('_method') || 'POST';
+                const url = this.action;
+                
+                // Convert FormData to JSON
+                const jsonData = {};
+                
+                for (let [key, value] of formData.entries()) {
+                    if (key !== '_method' && key !== 'isEditMode') {
+                        jsonData[key] = value;
+                    }
+                }
+                
+                fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(jsonData)
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.text();
+                    } else {
+                        throw new Error('Network response was not ok');
+                    }
+                })
+                .then(message => {
+                    alert(message);
+                    closeUserModal();
+                    location.reload();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra!');
+                });
+            });
+            
+            // Set active nav link
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.sidebar-nav a');
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

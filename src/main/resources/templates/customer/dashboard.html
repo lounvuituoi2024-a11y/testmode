@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <style>
+        .profile-section {
+            background: #fff;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .readonly-info {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h3>Customer Panel</h3>
+            </div>
+            <ul class="sidebar-nav">
+                <li>
+                    <a href="/customer/dashboard" class="active">
+                        Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="/logout">
+                        Đăng xuất
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <h1 class="header-title">Customer Dashboard</h1>
+            </header>
+
+            <!-- Content -->
+            <div class="content">
+                <!-- Alerts -->
+                <div id="successAlert" class="alert alert-success"></div>
+                <div id="errorAlert" class="alert alert-danger"></div>
+
+                <!-- Personal Information Section -->
+                <div class="profile-section">
+                    <h3 class="section-title">Thông tin cá nhân</h3>
+                    <form id="profileForm">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Tên đăng nhập (không thể thay đổi)</label>
+                                <div class="readonly-info" th:text="${currentUser?.tenDangNhap ?: 'Đang tải...'}">
+                                    Đang tải...
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Quyền hạn</label>
+                                <div class="readonly-info">Khách hàng</div>
+                            </div>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="hoTen">Họ và tên *</label>
+                                <input type="text" id="hoTen" name="hoTen" required 
+                                       th:value="${currentUser?.hoTen ?: ''}">
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email *</label>
+                                <input type="email" id="email" name="email" required 
+                                       th:value="${currentUser?.email ?: ''}">
+                            </div>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="soDienThoai">Số điện thoại</label>
+                                <input type="tel" id="soDienThoai" name="soDienThoai" 
+                                       th:value="${currentUser?.soDienThoai ?: ''}">
+                            </div>
+                            <div class="form-group">
+                                <label for="diaChi">Địa chỉ</label>
+                                <input type="text" id="diaChi" name="diaChi" 
+                                       th:value="${currentUser?.diaChi ?: ''}">
+                            </div>
+                        </div>
+                        <div>
+                            <button type="submit" class="btn-primary">Cập nhật thông tin</button>
+                            <button type="button" class="btn-secondary" onclick="resetProfileForm()">Hủy bỏ</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Change Password Section -->
+                <div class="profile-section">
+                    <h3 class="section-title">Thay đổi mật khẩu</h3>
+                    <form id="passwordForm">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="currentPassword">Mật khẩu hiện tại *</label>
+                                <input type="password" id="currentPassword" name="currentPassword" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="newPassword">Mật khẩu mới *</label>
+                                <input type="password" id="newPassword" name="newPassword" required minlength="6">
+                            </div>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="confirmPassword">Xác nhận mật khẩu mới *</label>
+                                <input type="password" id="confirmPassword" name="confirmPassword" required minlength="6">
+                            </div>
+                        </div>
+                        <div>
+                            <button type="submit" class="btn-primary">Thay đổi mật khẩu</button>
+                            <button type="button" class="btn-secondary" onclick="resetPasswordForm()">Hủy bỏ</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Profile form submission
+        document.getElementById('profileForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = {
+                hoTen: formData.get('hoTen'),
+                email: formData.get('email'),
+                soDienThoai: formData.get('soDienThoai'),
+                diaChi: formData.get('diaChi')
+            };
+
+            try {
+                const response = await fetch('/api/customer/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    showAlert('success', result.message || 'Cập nhật thông tin thành công!');
+                } else {
+                    showAlert('error', result.message || 'Có lỗi xảy ra khi cập nhật thông tin');
+                }
+            } catch (error) {
+                showAlert('error', 'Có lỗi xảy ra: ' + error.message);
+            }
+        });
+
+        // Password form submission
+        document.getElementById('passwordForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (newPassword !== confirmPassword) {
+                showAlert('error', 'Mật khẩu mới và xác nhận mật khẩu không khớp');
+                return;
+            }
+
+            const data = {
+                matKhauHienTai: currentPassword,
+                matKhauMoi: newPassword,
+                xacNhanMatKhau: confirmPassword
+            };
+
+            console.log('Sending password change data:', {
+                matKhauHienTai: currentPassword ? '***' : 'empty',
+                matKhauMoi: newPassword ? '***' : 'empty', 
+                xacNhanMatKhau: confirmPassword ? '***' : 'empty'
+            });
+
+            try {
+                const response = await fetch('/api/customer/change-password', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    showAlert('success', result.message || 'Thay đổi mật khẩu thành công!');
+                    resetPasswordForm();
+                } else {
+                    console.error('Password change error:', result);
+                    showAlert('error', result.message || 'Có lỗi xảy ra khi thay đổi mật khẩu');
+                }
+            } catch (error) {
+                console.error('Network error:', error);
+                showAlert('error', 'Có lỗi mạng xảy ra: ' + error.message);
+            }
+        });
+
+        // Utility functions
+        function showAlert(type, message) {
+            const successAlert = document.getElementById('successAlert');
+            const errorAlert = document.getElementById('errorAlert');
+            
+            // Hide all alerts first
+            successAlert.style.display = 'none';
+            errorAlert.style.display = 'none';
+            
+            if (type === 'success') {
+                successAlert.textContent = message;
+                successAlert.style.display = 'block';
+                setTimeout(() => successAlert.style.display = 'none', 5000);
+            } else {
+                errorAlert.textContent = message;
+                errorAlert.style.display = 'block';
+                setTimeout(() => errorAlert.style.display = 'none', 5000);
+            }
+            
+            // Scroll to top to show alert
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetProfileForm() {
+            location.reload(); // Reload to get original values
+        }
+
+        function resetPasswordForm() {
+            document.getElementById('passwordForm').reset();
+        }
+
+        // Set active nav link
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.sidebar-nav a');
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

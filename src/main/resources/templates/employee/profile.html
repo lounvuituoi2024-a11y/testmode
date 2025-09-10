@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee - Thông tin cá nhân</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .profile-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .profile-card {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .profile-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .profile-role {
+            background: #3498db;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 15px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .info-section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 3px solid #3498db;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .info-value {
+            font-size: 16px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid #b3d7ff;
+            border-radius: 6px;
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        @media (max-width: 768px) {
+            .profile-card {
+                padding: 20px;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h3>Employee Panel</h3>
+            </div>
+            <ul class="sidebar-nav">
+                <li>
+                    <a href="/employee/dashboard">
+                        Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="/employee/products">
+                        Quản lý Sản phẩm
+                    </a>
+                </li>
+                <li>
+                    <a href="/employee/profile" class="active">
+                        Thông tin cá nhân
+                    </a>
+                </li>
+                <li>
+                    <a href="/logout">
+                        Đăng xuất
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <h1 class="header-title">Thông tin cá nhân</h1>
+            </header>
+
+            <!-- Content -->
+            <div class="content">
+                <div class="profile-container">
+                    <div class="alert">
+                        <strong>Lưu ý:</strong> Bạn chỉ có thể xem thông tin cá nhân. Để thay đổi thông tin, vui lòng liên hệ với quản trị viên.
+                    </div>
+
+                    <div class="profile-card">
+                        <div class="profile-header">
+                            <div class="profile-name" th:text="${currentUser.hoTen}">Tên nhân viên</div>
+                            <div class="profile-role">NHÂN VIÊN</div>
+                        </div>
+
+                        <!-- Basic Information -->
+                        <div class="info-section">
+                            <h3 class="section-title">Thông tin cơ bản</h3>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <div class="info-label">Tên đăng nhập</div>
+                                    <div class="info-value" th:text="${currentUser.tenDangNhap}">username</div>
+                                </div>
+
+                                <div class="info-item">
+                                    <div class="info-label">Họ và tên</div>
+                                    <div class="info-value" th:text="${currentUser.hoTen}">Họ tên</div>
+                                </div>
+
+                                <div class="info-item">
+                                    <div class="info-label">Email</div>
+                                    <div class="info-value" th:text="${currentUser.email}">email@example.com</div>
+                                </div>
+
+                                <div class="info-item">
+                                    <div class="info-label">Số điện thoại</div>
+                                    <div class="info-value" th:text="${currentUser.soDienThoai ?: 'Chưa cập nhật'}">Số điện thoại</div>
+                                </div>
+
+                                <div class="info-item">
+                                    <div class="info-label">Địa chỉ</div>
+                                    <div class="info-value" th:text="${currentUser.diaChi ?: 'Chưa cập nhật'}">Địa chỉ</div>
+                                </div>
+
+                                <div class="info-item">
+                                    <div class="info-label">Trạng thái</div>
+                                    <div class="info-value">
+                                        <span th:class="${currentUser.trangThai == 'HOATDONG'} ? 'status-badge status-active' : 'status-badge status-inactive'"
+                                              th:text="${currentUser.trangThai == 'HOATDONG'} ? 'Hoạt động' : 'Bị khóa'">
+                                            Trạng thái
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Permissions Section -->
+                        <div class="info-section">
+                            <h3 class="section-title">Quyền hạn</h3>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <div class="info-label">Quản lý sản phẩm</div>
+                                    <div class="info-value">Thêm, sửa, xóa sản phẩm</div>
+                                </div>
+
+                                <div class="info-item">
+                                    <div class="info-label">Tìm kiếm & Lọc</div>
+                                    <div class="info-value">Tìm kiếm sản phẩm theo nhiều tiêu chí</div>
+                                </div>
+
+                                <div class="info-item">
+                                    <div class="info-label">Xem thông tin</div>
+                                    <div class="info-value">Xem thông tin cá nhân (chỉ đọc)</div>
+                                </div>
+
+                                <div class="info-item">
+                                    <div class="info-label">Hạn chế</div>
+                                    <div class="info-value">Không thể sửa thông tin cá nhân</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set active nav link
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.sidebar-nav a');
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

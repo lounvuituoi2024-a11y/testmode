@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h3><i class="fas fa-user-tie"></i> Employee Panel</h3>
+            </div>
+            <ul class="sidebar-nav">
+                <li>
+                    <a href="/employee/dashboard" class="active">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="/employee/products">
+                        <i class="fas fa-box"></i> Quản lý Sản phẩm
+                    </a>
+                </li>
+                <li>
+                    <a href="/employee/profile">
+                        <i class="fas fa-user-cog"></i> Thông tin cá nhân
+                    </a>
+                </li>
+                <li>
+                    <a href="/logout">
+                        <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <h1 class="header-title">Employee Dashboard</h1>
+            </header>
+
+            <!-- Content -->
+            <div class="content">
+                <!-- Quick Actions -->
+                <div class="quick-actions" style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px; color: #2c3e50;">Thao tác nhanh</h3>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <a href="/employee/products" class="btn btn-primary">
+                            <i class="fas fa-box"></i> Quản lý Sản phẩm
+                        </a>
+                        <button onclick="window.location.href='/employee/products'" class="btn btn-success">
+                            <i class="fas fa-plus"></i> Thêm sản phẩm mới
+                        </button>
+                        <a href="/employee/profile" class="btn btn-info">
+                            <i class="fas fa-user"></i> Xem thông tin cá nhân
+                        </a>
+                    </div>
+                </div>
+
+                <div class="stats-cards">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalProducts">...</div>
+                        <div class="stat-label">Tổng sản phẩm</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="availableProducts">...</div>
+                        <div class="stat-label">Còn hàng</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="outOfStockProducts">...</div>
+                        <div class="stat-label">Hết hàng</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="discontinuedProducts">...</div>
+                        <div class="stat-label">Ngừng bán</div>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3 class="table-title">Chào mừng nhân viên!</h3>
+                        <a href="/employee/products" class="btn btn-primary">
+                            <i class="fas fa-box"></i> Quản lý sản phẩm
+                        </a>
+                    </div>
+                    <div style="padding: 20px;">
+                        <p>Bạn đã đăng nhập với quyền <strong>Nhân viên</strong>.</p>
+                        <p>Từ đây bạn có thể:</p>
+                        <ul style="margin-left: 20px; line-height: 1.8;">
+                            <li><strong>Quản lý sản phẩm:</strong> Thêm, sửa, xóa sản phẩm</li>
+                            <li><strong>Tìm kiếm & lọc:</strong> Tìm kiếm sản phẩm theo nhiều tiêu chí</li>
+                            <li><strong>Cập nhật trạng thái:</strong> Thay đổi trạng thái sản phẩm</li>
+                            <li><strong>Xem thông tin cá nhân:</strong> Kiểm tra thông tin tài khoản</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load product statistics
+        async function loadProductStats() {
+            try {
+                // Load all products to calculate stats
+                const response = await fetch('/api/employee/products');
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Dashboard API Response:', data); // Debug log
+                    
+                    let products = [];
+                    // Handle ApiResponse<Page<SanPham>> format
+                    if (data.success && data.data && data.data.content) {
+                        products = Array.isArray(data.data.content) ? data.data.content : [];
+                    } else if (data.content) {
+                        // Direct Page format
+                        products = Array.isArray(data.content) ? data.content : [];
+                    } else if (Array.isArray(data)) {
+                        // Direct array
+                        products = data;
+                    }
+                    
+                    // Calculate statistics
+                    const totalProducts = products.length;
+                    const availableProducts = products.filter(p => p.trangThai === 'CONHANG').length;
+                    const outOfStockProducts = products.filter(p => p.trangThai === 'HETHANG').length;
+                    const discontinuedProducts = products.filter(p => p.trangThai === 'NGUNGBAN').length;
+                    
+                    // Update UI
+                    document.getElementById('totalProducts').textContent = totalProducts;
+                    document.getElementById('availableProducts').textContent = availableProducts;
+                    document.getElementById('outOfStockProducts').textContent = outOfStockProducts;
+                    document.getElementById('discontinuedProducts').textContent = discontinuedProducts;
+                } else {
+                    console.error('Error loading product stats:', response.status, response.statusText);
+                    // Set default values on error
+                    document.getElementById('totalProducts').textContent = '0';
+                    document.getElementById('availableProducts').textContent = '0';
+                    document.getElementById('outOfStockProducts').textContent = '0';
+                    document.getElementById('discontinuedProducts').textContent = '0';
+                }
+            } catch (error) {
+                console.error('Error loading product stats:', error);
+                // Set default values on error
+                document.getElementById('totalProducts').textContent = '0';
+                document.getElementById('availableProducts').textContent = '0';
+                document.getElementById('outOfStockProducts').textContent = '0';
+                document.getElementById('discontinuedProducts').textContent = '0';
+            }
+        }
+
+        // Set active nav link
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.sidebar-nav a');
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+
+            // Load statistics
+            loadProductStats();
+        });
+    </script>
+</body>
+</html>

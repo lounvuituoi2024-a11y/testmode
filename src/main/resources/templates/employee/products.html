@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee - Quản lý Sản phẩm</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .controls {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .actions {
+            white-space: nowrap;
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .badge-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .badge-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 12px;
+            width: 80%;
+            max-width: 600px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        /* Quick actions */
+        .quick-actions {
+            margin-bottom: 30px;
+        }
+
+        .quick-actions h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .quick-actions-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h3><i class="fas fa-user-tie"></i> Employee Panel</h3>
+            </div>
+            <ul class="sidebar-nav">
+                <li>
+                    <a href="/employee/dashboard">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="/employee/products" class="active">
+                        <i class="fas fa-box"></i> Quản lý Sản phẩm
+                    </a>
+                </li>
+                <li>
+                    <a href="/employee/profile">
+                        <i class="fas fa-user-cog"></i> Thông tin cá nhân
+                    </a>
+                </li>
+                <li>
+                    <a href="/logout">
+                        <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <h1 class="header-title"><i class="fas fa-box"></i> Quản lý Sản phẩm</h1>
+            </header>
+
+            <!-- Content -->
+            <div class="content">
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <h3>Thao tác nhanh</h3>
+                    <div class="quick-actions-row">
+                        <button class="btn btn-success" onclick="openAddModal()">
+                            <i class="fas fa-plus"></i> Thêm sản phẩm mới
+                        </button>
+                        <button class="btn btn-info" onclick="filterByStatus('CONHANG')">
+                            <i class="fas fa-check-circle"></i> Còn hàng
+                        </button>
+                        <button class="btn btn-warning" onclick="filterByStatus('HETHANG')">
+                            <i class="fas fa-exclamation-triangle"></i> Hết hàng
+                        </button>
+                        <button class="btn btn-danger" onclick="filterByStatus('NGUNGBAN')">
+                            <i class="fas fa-ban"></i> Ngừng bán
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="controls">
+                    <div class="controls-row">
+                        <div class="search-box">
+                            <input type="text" class="form-control" id="searchKeyword" placeholder="Tìm kiếm theo tên sản phẩm...">
+                        </div>
+                        <select class="form-control" id="statusFilter" style="width: auto;">
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="CONHANG">Còn hàng</option>
+                            <option value="HETHANG">Hết hàng</option>
+                            <option value="NGUNGBAN">Ngừng bán</option>
+                        </select>
+                        <button type="button" class="btn btn-primary" onclick="filterProducts()">
+                            <i class="fas fa-search"></i> Lọc
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="clearFilter()">
+                            <i class="fas fa-times"></i> Xóa bộ lọc
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Products Table -->
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3 class="table-title">Danh sách Sản phẩm</h3>
+                        <span>Tổng số: <strong id="productCount">0</strong> sản phẩm</span>
+                    </div>
+                    <div style="padding: 20px;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tên sản phẩm</th>
+                                    <th>Giá</th>
+                                    <th>Số lượng</th>
+                                    <th>Trạng thái</th>
+                                    <th>Mô tả</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsTableBody">
+                                <!-- Products will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Product Modal -->
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Thêm sản phẩm mới</h3>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <form id="productForm">
+                <input type="hidden" id="productId">
+                
+                <div class="form-group">
+                    <label class="form-label">Tên sản phẩm *</label>
+                    <input type="text" class="form-control" id="ten" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Giá *</label>
+                    <input type="number" class="form-control" id="gia" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Số lượng *</label>
+                    <input type="number" class="form-control" id="soLuong" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Trạng thái *</label>
+                    <select class="form-control" id="trangThai" required>
+                        <option value="CONHANG">Còn hàng</option>
+                        <option value="HETHANG">Hết hàng</option>
+                        <option value="NGUNGBAN">Ngừng bán</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Mô tả</label>
+                    <textarea class="form-control" id="moTa" rows="3"></textarea>
+                </div>
+                
+                <div style="text-align: right; margin-top: 20px;">
+                    <button type="button" class="btn btn-warning" onclick="closeModal()">Hủy</button>
+                    <button type="submit" class="btn btn-success">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let products = [];
+        let filteredProducts = [];
+        
+        // Load products
+        async function loadProducts() {
+            try {
+                const response = await fetch('/api/employee/products');
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('API Response:', data); // Debug log
+                    
+                    // Handle ApiResponse<Page<SanPham>> format
+                    if (data.success && data.data && data.data.content) {
+                        products = Array.isArray(data.data.content) ? data.data.content : [];
+                    } else if (data.content) {
+                        // Direct Page format
+                        products = Array.isArray(data.content) ? data.content : [];
+                    } else if (Array.isArray(data)) {
+                        // Direct array
+                        products = data;
+                    } else {
+                        // Fallback
+                        products = [];
+                        console.warn('Unexpected API response format:', data);
+                    }
+                    
+                    filteredProducts = [...products];
+                    displayProducts(filteredProducts);
+                    updateProductCount();
+                } else {
+                    console.error('Error loading products:', response.status, response.statusText);
+                    products = [];
+                    filteredProducts = [];
+                    displayProducts(filteredProducts);
+                    alert('Lỗi khi tải danh sách sản phẩm: ' + response.statusText);
+                }
+            } catch (error) {
+                console.error('Error loading products:', error);
+                products = [];
+                filteredProducts = [];
+                displayProducts(filteredProducts);
+                alert('Lỗi khi tải danh sách sản phẩm: ' + error.message);
+            }
+        }
+        
+        // Display products
+        function displayProducts(productsToShow) {
+            const tbody = document.getElementById('productsTableBody');
+            
+            if (productsToShow.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #7f8c8d;">Không có sản phẩm nào</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = productsToShow.map(product => {
+                const statusBadge = getStatusBadge(product.trangThai);
+                return `
+                    <tr>
+                        <td>${product.id}</td>
+                        <td>${product.ten}</td>
+                        <td style="color: #e74c3c; font-weight: bold;">${formatPrice(product.gia)} VNĐ</td>
+                        <td>${product.soLuong}</td>
+                        <td>${statusBadge}</td>
+                        <td title="${product.moTa || 'Không có mô tả'}">${truncateText(product.moTa || 'Không có mô tả', 30)}</td>
+                        <td class="actions">
+                            <button class="btn btn-primary btn-sm" onclick="editProduct(${product.id})">
+                                <i class="fas fa-edit"></i> Sửa
+                            </button>
+                            <button class="btn btn-warning btn-sm" onclick="updateProductStatus(${product.id}, '${product.trangThai}')">
+                                <i class="fas fa-exchange-alt"></i> Đổi TT
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteProduct(${product.id})">
+                                <i class="fas fa-trash"></i> Xóa
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        // Get status badge
+        function getStatusBadge(status) {
+            switch(status) {
+                case 'CONHANG':
+                    return '<span class="badge badge-success">Còn hàng</span>';
+                case 'HETHANG':
+                    return '<span class="badge badge-warning">Hết hàng</span>';
+                case 'NGUNGBAN':
+                    return '<span class="badge badge-danger">Ngừng bán</span>';
+                default:
+                    return '<span class="badge badge-secondary">Không xác định</span>';
+            }
+        }
+        
+        // Filter products
+        function filterProducts() {
+            const keyword = document.getElementById('searchKeyword').value.toLowerCase();
+            const status = document.getElementById('statusFilter').value;
+            
+            filteredProducts = products.filter(product => {
+                const matchKeyword = !keyword || product.ten.toLowerCase().includes(keyword);
+                const matchStatus = !status || product.trangThai === status;
+                return matchKeyword && matchStatus;
+            });
+            
+            displayProducts(filteredProducts);
+            updateProductCount();
+        }
+        
+        // Filter by status (quick action)
+        function filterByStatus(status) {
+            document.getElementById('statusFilter').value = status;
+            document.getElementById('searchKeyword').value = '';
+            filterProducts();
+        }
+        
+        // Clear filter
+        function clearFilter() {
+            document.getElementById('searchKeyword').value = '';
+            document.getElementById('statusFilter').value = '';
+            filteredProducts = [...products];
+            displayProducts(filteredProducts);
+            updateProductCount();
+        }
+        
+        // Update product count
+        function updateProductCount() {
+            document.getElementById('productCount').textContent = filteredProducts.length;
+        }
+        
+        // Modal functions
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = 'Thêm sản phẩm mới';
+            document.getElementById('productForm').reset();
+            document.getElementById('productId').value = '';
+            document.getElementById('productModal').style.display = 'block';
+        }
+        
+        function editProduct(id) {
+            const product = products.find(p => p.id === id);
+            if (!product) return;
+            
+            document.getElementById('modalTitle').textContent = 'Sửa sản phẩm';
+            document.getElementById('productId').value = product.id;
+            document.getElementById('ten').value = product.ten;
+            document.getElementById('gia').value = product.gia;
+            document.getElementById('soLuong').value = product.soLuong;
+            document.getElementById('trangThai').value = product.trangThai;
+            document.getElementById('moTa').value = product.moTa || '';
+            document.getElementById('productModal').style.display = 'block';
+        }
+        
+        function closeModal() {
+            document.getElementById('productModal').style.display = 'none';
+        }
+        
+        // Save product
+        document.getElementById('productForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const productData = {
+                ten: document.getElementById('ten').value,
+                gia: parseFloat(document.getElementById('gia').value),
+                soLuong: parseInt(document.getElementById('soLuong').value),
+                trangThai: document.getElementById('trangThai').value,
+                moTa: document.getElementById('moTa').value
+            };
+            
+            const productId = document.getElementById('productId').value;
+            
+            try {
+                let response;
+                if (productId) {
+                    // Update
+                    response = await fetch(`/api/employee/products/${productId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(productData)
+                    });
+                } else {
+                    // Create
+                    response = await fetch('/api/employee/products', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(productData)
+                    });
+                }
+                
+                if (response.ok) {
+                    alert('Lưu sản phẩm thành công!');
+                    closeModal();
+                    loadProducts();
+                } else {
+                    const errorText = await response.text();
+                    alert('Có lỗi xảy ra: ' + errorText);
+                }
+            } catch (error) {
+                console.error('Error saving product:', error);
+                alert('Có lỗi xảy ra khi lưu sản phẩm!');
+            }
+        });
+        
+        // Update product status
+        async function updateProductStatus(id, currentStatus) {
+            const statuses = ['CONHANG', 'HETHANG', 'NGUNGBAN'];
+            const statusNames = ['Còn hàng', 'Hết hàng', 'Ngừng bán'];
+            
+            const newStatus = prompt(`Chọn trạng thái mới:\n1. Còn hàng\n2. Hết hàng\n3. Ngừng bán\n\nNhập số (1-3):`);
+            
+            if (newStatus && newStatus >= 1 && newStatus <= 3) {
+                const selectedStatus = statuses[newStatus - 1];
+                
+                try {
+                    const response = await fetch(`/api/employee/products/${id}/status?trangThai=${selectedStatus}`, {
+                        method: 'PUT'
+                    });
+                    
+                    if (response.ok) {
+                        alert('Cập nhật trạng thái thành công!');
+                        loadProducts();
+                    } else {
+                        alert('Có lỗi xảy ra khi cập nhật trạng thái!');
+                    }
+                } catch (error) {
+                    console.error('Error updating status:', error);
+                    alert('Có lỗi xảy ra khi cập nhật trạng thái!');
+                }
+            }
+        }
+        
+        // Delete product
+        async function deleteProduct(id) {
+            if (!confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) return;
+            
+            try {
+                const response = await fetch(`/api/employee/products/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    alert('Xóa sản phẩm thành công!');
+                    loadProducts();
+                } else {
+                    alert('Có lỗi xảy ra khi xóa sản phẩm!');
+                }
+            } catch (error) {
+                console.error('Error deleting product:', error);
+                alert('Có lỗi xảy ra khi xóa sản phẩm!');
+            }
+        }
+        
+        // Utility functions
+        function formatPrice(price) {
+            return price.toLocaleString('vi-VN');
+        }
+        
+        function truncateText(text, maxLength) {
+            if (text.length <= maxLength) return text;
+            return text.substring(0, maxLength) + '...';
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('productModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+        
+        // Set active nav link
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.sidebar-nav a');
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+            
+            // Load products
+            loadProducts();
+        });
+    </script>
+</body>
+</html>
