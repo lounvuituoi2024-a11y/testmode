@@ -33,4 +33,5 @@ build/
 .vscode/
 
 # Local app config (avoid committing secrets)
-src/main/resources/application.properties
+# src/main/resources/application.properties
+# (OAuth secrets removed, safe to commit)
